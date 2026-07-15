@@ -4,11 +4,13 @@ import Overview from './components/Overview';
 import ITPrediction from './components/ITPrediction';
 import FinancialRisk from './components/FinancialRisk';
 import Remediation from './components/Remediation';
-import BusinessStrategy from './components/BusinessStrategy';
+import HardwareDegradation from './components/HardwareDegradation';
+import Settings from './components/Settings';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [timestamp, setTimestamp] = useState('');
+  const [theme, setTheme] = useState('dark');
   
   // Lift alert state globally to share active alerts count with top-nav header
   const [alerts, setAlerts] = useState([
@@ -23,6 +25,15 @@ export default function App() {
       expanded: false
     }
   ]);
+
+  // Handle application theme toggling
+  useEffect(() => {
+    if (theme === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+  }, [theme]);
 
   // Update live clock
   useEffect(() => {
@@ -42,7 +53,8 @@ export default function App() {
       case 'it-prediction': return 'IT Incident Prediction';
       case 'financial-risk': return 'Financial Risk & Fraud';
       case 'remediation': return 'Automated Remediation';
-      case 'business-strategy': return 'Business Strategy';
+      case 'hardware-degradation': return 'Hardware Degradation';
+      case 'settings': return 'System Settings';
       default: return 'Dashboard';
     }
   };
@@ -77,7 +89,8 @@ export default function App() {
           {activeTab === 'it-prediction' && <ITPrediction />}
           {activeTab === 'financial-risk' && <FinancialRisk />}
           {activeTab === 'remediation' && <Remediation />}
-          {activeTab === 'business-strategy' && <BusinessStrategy />}
+          {activeTab === 'hardware-degradation' && <HardwareDegradation />}
+          {activeTab === 'settings' && <Settings theme={theme} setTheme={setTheme} />}
         </div>
       </main>
     </div>

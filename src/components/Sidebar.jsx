@@ -38,11 +38,18 @@ export default function Sidebar({ activeTab, setActiveTab }) {
           <span>Remediation</span>
         </button>
         <button 
-          className={`menu-item ${activeTab === 'business-strategy' ? 'active' : ''}`}
-          onClick={() => setActiveTab('business-strategy')}
+          className={`menu-item ${activeTab === 'hardware-degradation' ? 'active' : ''}`}
+          onClick={() => setActiveTab('hardware-degradation')}
         >
-          <i className="fa-solid fa-briefcase"></i>
-          <span>Business Strategy</span>
+          <i className="fa-solid fa-microchip"></i>
+          <span>Hardware Degradation</span>
+        </button>
+        <button 
+          className={`menu-item ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          <i className="fa-solid fa-sliders"></i>
+          <span>Settings</span>
         </button>
       </nav>
       
