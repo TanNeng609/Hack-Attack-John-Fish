@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import Overview from './components/Overview';
 import ITPrediction from './components/ITPrediction';
@@ -11,7 +11,10 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [timestamp, setTimestamp] = useState('');
   const [theme, setTheme] = useState('dark');
+  const [showNotifications, setShowNotifications] = useState(false);
   
+  const bellRef = useRef(null);
+
   // Lift alert state globally to share active alerts count with top-nav header
   const [alerts, setAlerts] = useState([
     {
@@ -34,6 +37,17 @@ export default function App() {
       document.body.classList.remove('light-theme');
     }
   }, [theme]);
+
+  // Handle click outside notifications dropdown to close it
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (bellRef.current && !bellRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Update live clock
   useEffect(() => {
@@ -72,12 +86,72 @@ export default function App() {
           <h1 className="page-title">{getPageTitle()}</h1>
           <div className="nav-actions">
             <div className="live-time">{timestamp}</div>
-            <div className="alert-bell">
-              <i className="fa-solid fa-bell"></i>
+            
+            {/* Interactive Bell Container */}
+            <div className="alert-bell" ref={bellRef}>
+              <i 
+                className="fa-solid fa-bell" 
+                onClick={() => setShowNotifications(!showNotifications)}
+                style={{ cursor: 'pointer' }}
+              ></i>
               {activeAlertsCount > 0 && (
-                <span className="badge-count">{activeAlertsCount}</span>
+                <span 
+                  className="badge-count"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {activeAlertsCount}
+                </span>
+              )}
+
+              {/* Dropdown Menu */}
+              {showNotifications && (
+                <div className="notifications-dropdown" onClick={(e) => e.stopPropagation()}>
+                  <div className="dropdown-header">
+                    <span>Notifications</span>
+                    {alerts.length > 0 && (
+                      <button 
+                        className="dropdown-clear-btn"
+                        onClick={() => {
+                          setAlerts([]);
+                          setShowNotifications(false);
+                        }}
+                      >
+                        Clear All
+                      </button>
+                    )}
+                  </div>
+                  <div className="dropdown-list">
+                    {alerts.length === 0 ? (
+                      <div className="dropdown-empty">
+                        <i className="fa-regular fa-bell-slash" style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}></i>
+                        <span>No new notifications</span>
+                      </div>
+                    ) : (
+                      alerts.map(alert => (
+                        <div key={alert.id} className="dropdown-item">
+                          <div className={`dropdown-item-icon ${alert.type === 'danger' ? 'danger' : alert.type === 'warning' ? 'warning' : 'success'}`}>
+                            <i className={
+                              alert.type === 'danger' 
+                                ? 'fa-solid fa-circle-exclamation' 
+                                : alert.type === 'warning' 
+                                  ? 'fa-solid fa-triangle-exclamation' 
+                                  : 'fa-solid fa-circle-check'
+                            }></i>
+                          </div>
+                          <div className="dropdown-item-content">
+                            <span className="dropdown-item-title">{alert.title}</span>
+                            <span className="dropdown-item-desc" dangerouslySetInnerHTML={{ __html: alert.desc }}></span>
+                            <span className="dropdown-item-time">{alert.time}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               )}
             </div>
+
           </div>
         </header>
 
