@@ -160,7 +160,7 @@ export default function App() {
           {activeTab === 'overview' && (
             <Overview alerts={alerts} setAlerts={setAlerts} />
           )}
-          {activeTab === 'it-prediction' && <ITPrediction />}
+          {activeTab === 'it-prediction' && <ITPrediction setActiveTab={setActiveTab} />}
           {activeTab === 'financial-risk' && <FinancialRisk />}
           {activeTab === 'remediation' && <Remediation />}
           {activeTab === 'hardware-degradation' && <HardwareDegradation />}
