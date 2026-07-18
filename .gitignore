@@ -1,0 +1,5 @@
+firmware/HardwareMonitor/secrets.h
+ml/__pycache__/
+ml/*.pkl
+ml/.venv/
+dist/

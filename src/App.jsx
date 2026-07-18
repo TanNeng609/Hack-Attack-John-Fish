@@ -163,7 +163,7 @@ export default function App() {
           {activeTab === 'it-prediction' && <ITPrediction setActiveTab={setActiveTab} />}
           {activeTab === 'financial-risk' && <FinancialRisk />}
           {activeTab === 'remediation' && <Remediation />}
-          {activeTab === 'hardware-degradation' && <HardwareDegradation />}
+          {activeTab === 'hardware-degradation' && <HardwareDegradation setActiveTab={setActiveTab} setAlerts={setAlerts} />}
           {activeTab === 'settings' && <Settings theme={theme} setTheme={setTheme} />}
         </div>
       </main>

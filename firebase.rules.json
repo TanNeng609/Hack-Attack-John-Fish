@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "racks": {
+      "$rackId": {
+        ".read": true,
+        ".write": false,
+        "telemetry": {
+          ".indexOn": ["ts"]
+        },
+        "events": {
+          ".indexOn": ["ts"]
+        }
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}
