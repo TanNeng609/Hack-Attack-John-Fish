@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "browserslist": "^4.28.6",
+    "caniuse-lite": "^1.0.30001806",
     "chart.js": "^4.4.3",
     "firebase": "^12.16.0",
     "react": "^18.3.1",
