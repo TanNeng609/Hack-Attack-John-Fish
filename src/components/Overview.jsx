@@ -5,7 +5,7 @@ export default function Overview({ alerts, setAlerts }) {
   const [systemHealth, setSystemHealth] = useState(98.4);
   const [threatIndex, setThreatIndex] = useState(12);
   const [anomalyRate, setAnomalyRate] = useState(0.04);
-  const [costSaved, setCostSaved] = useState(48200); // Business value metric (USD)
+  const [costSaved, setCostSaved] = useState(0); // Business value metric (MYR) - Zero start
   
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
@@ -96,6 +96,20 @@ export default function Overview({ alerts, setAlerts }) {
           plugins: {
             legend: {
               labels: { color: '#94a3b8', font: { family: 'Outfit', weight: '500' } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    label += context.parsed.y + (context.datasetIndex === 0 ? '% CPU' : '% Failures');
+                  }
+                  return label;
+                }
+              }
             }
           }
         }
@@ -159,7 +173,7 @@ export default function Overview({ alerts, setAlerts }) {
           time: "Just Now",
           title: "Infrastructure Spike Impacting Checkout API",
           desc: "Thread exhaustion on <strong>user-service</strong> (CPU: 94%) is blocking database read locks, resulting in <strong>16.8% payment checkout failures</strong>.",
-          xai: "Correlated Risk Inference: (1) user-service connection timeouts spiked. (2) Database threads saturated at 100%. (3) Checkout API transaction failure rate increased from 0.25% to 16.8% (99.9% anomaly percentile). Expected business loss: $9,000/minute. Action required: Scale replicas and flush connections.",
+          xai: "Correlated Risk Inference: (1) user-service connection timeouts spiked. (2) Database threads saturated at 100%. (3) Checkout API transaction failure rate increased from 0.25% to 16.8% (99.9% anomaly percentile). Expected business loss: RM 9,000/minute. Action required: Scale replicas and flush connections.",
           expanded: false
         };
 
@@ -171,7 +185,7 @@ export default function Overview({ alerts, setAlerts }) {
       clearInterval(telemetryInterval);
       clearInterval(anomalyInterval);
     };
-  }, [alerts]);
+  }, [setAlerts]); // Fixed dependency array to prevent demonstration resets
 
   const toggleAlert = (alertId) => {
     setAlerts(prev => prev.map(alert => 
@@ -189,7 +203,7 @@ export default function Overview({ alerts, setAlerts }) {
       time: "Just Now",
       title: "Cross-Domain Telemetry Normalized",
       desc: "Autoscaled pods and cleared cache connections. CPU Load returned to 38%. Payment checkout failure rate restored to 0.25%.",
-      xai: "System auto-check passed. Database connections cleared. Checked transaction endpoints and returned HTTP 200 OK. Prevented potential additional loss of $18,000.",
+      xai: "System auto-check passed. Database connections cleared. Checked transaction endpoints and returned HTTP 200 OK. Prevented potential additional loss of RM 18,000.",
       expanded: false
     };
 
@@ -201,10 +215,43 @@ export default function Overview({ alerts, setAlerts }) {
     setCostSaved(prev => prev + 18000); // Add RM 18,000 business value for solving the incident!
   };
 
+  const [generatingReport, setGeneratingReport] = useState(false);
+
+  const handleGenerateReport = () => {
+    setGeneratingReport(true);
+    setTimeout(() => {
+      setGeneratingReport(false);
+      alert(`ÆGIS-AI COMPLIANCE REPORT GENERATED\n\nTimestamp: ${new Date().toISOString()}\nThreat Index: ${threatIndex}%\nSystem Health: ${systemHealth}%\nTx Anomaly Rate: ${anomalyRate}%\nTotal Business Value Saved: RM ${costSaved.toLocaleString()}\n\nStatus: PASSED\nReport has been compiled and dispatched to security-compliance@enterprise.com.`);
+    }, 1500);
+  };
+
   const activeAlertsCount = alerts.filter(a => a.type === "danger").length;
 
   return (
     <div className="overview-page">
+      {/* Top Header Actions */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <p className="panel-subtitle" style={{ margin: 0, color: 'var(--text-muted)' }}>System-wide predictive security and business risk compliance matrix.</p>
+        </div>
+        <button 
+          className="btn-simulate" 
+          onClick={handleGenerateReport} 
+          disabled={generatingReport}
+          style={{ margin: 0, padding: '0.6rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+        >
+          {generatingReport ? (
+            <>
+              <i className="fa-solid fa-spinner fa-spin"></i> Generating Report...
+            </>
+          ) : (
+            <>
+              <i className="fa-solid fa-file-invoice-dollar"></i> Generate Compliance Report
+            </>
+          )}
+        </button>
+      </div>
+
       {/* KPI Cards Grid */}
       <div className="grid-stats">
         {/* Card 1: System Health */}
@@ -260,11 +307,11 @@ export default function Overview({ alerts, setAlerts }) {
             <span>DOWNTIME COST AVOIDED</span>
             <i className="fa-solid fa-wallet stat-icon" style={{ color: 'var(--color-success)' }}></i>
           </div>
-          <div className="stat-value">${costSaved.toLocaleString()} USD</div>
+          <div className="stat-value">RM {costSaved.toLocaleString()}</div>
           <div className="stat-footer">
             {activeAnomaly.current ? (
               <span className="trend-down" style={{ fontWeight: '700', textDecoration: 'underline' }}>
-                <i className="fa-solid fa-screwdriver-wrench"></i> Auto-Fix to save $18,000
+                <i className="fa-solid fa-screwdriver-wrench"></i> Auto-Fix to save RM 18,000
               </span>
             ) : (
               <span className="trend-up" style={{ fontWeight: '600' }}>

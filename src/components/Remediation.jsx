@@ -150,6 +150,26 @@ export default function Remediation({ actions, setActions }) {
                   <i className="fa-solid fa-brain" style={{ marginRight: '6px', color: 'var(--text-muted)' }}></i> 
                   {action.reason}
                 </p>
+
+                {action.nodeId && (
+                  <div style={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap',
+                    gap: '1rem', 
+                    fontSize: '0.78rem', 
+                    color: '#94a3b8', 
+                    marginBottom: '1rem', 
+                    background: 'rgba(255, 255, 255, 0.02)', 
+                    padding: '0.5rem 0.75rem', 
+                    borderRadius: '4px', 
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    fontFamily: 'var(--font-mono)'
+                  }}>
+                    <span><strong style={{ color: 'var(--color-primary)' }}>Target Node:</strong> {action.nodeId.toUpperCase()}</span>
+                    <span><strong style={{ color: 'var(--color-warning)' }}>Trigger Metric:</strong> {action.metric}</span>
+                    <span><strong style={{ color: 'var(--color-success)' }}>Action Payload:</strong> {action.suggestedFix}</span>
+                  </div>
+                )}
                 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: '0.75rem' }}>
                   {action.status === 'Pending Approval' && (

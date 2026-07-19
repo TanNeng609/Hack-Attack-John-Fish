@@ -198,6 +198,30 @@ export default function App() {
           {activeTab === 'hardware-degradation' && <HardwareDegradation setActiveTab={setActiveTab} setAlerts={setAlerts} addRemediationAction={addRemediationAction} />}
           {activeTab === 'settings' && <Settings theme={theme} setTheme={setTheme} />}
         </div>
+        
+        {/* Continuous baseline connection footer - CRITICAL BUSINESS COMPLIANCE */}
+        <footer style={{
+          marginTop: 'auto',
+          padding: '0.75rem 1.5rem',
+          background: 'rgba(10, 15, 30, 0.4)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          fontSize: '0.75rem',
+          color: '#64748b',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div>
+            AegisAI Engine: <span style={{ color: 'var(--color-success)', fontWeight: '600' }}><i className="fa-solid fa-circle-check"></i> ONLINE</span>
+          </div>
+          <div style={{ display: 'flex', gap: '1.5rem' }}>
+            <span>MySQL DB Cluster: <span style={{ color: 'var(--color-success)' }}>Connected (0.8ms query latency)</span></span>
+            <span>PyTorch Inference Model: <span style={{ color: '#00f2fe' }}>v2.4.1-active</span></span>
+            <span>Edge Gateway Region: <span style={{ color: '#94a3b8' }}>AP-Southeast-1 (Kuala Lumpur)</span></span>
+          </div>
+        </footer>
       </main>
     </div>
   );

@@ -6,6 +6,9 @@ export default function ITPrediction({ setActiveTab, addRemediationAction }) {
   const [selectedNode, setSelectedNode] = useState(null);
   const [logs, setLogs] = useState([]);
   
+  const [faultType, setFaultType] = useState('traffic');
+  const [currentFault, setCurrentFault] = useState(null);
+
   // Node Statuses (healthy, warning, critical)
   const [nodes, setNodes] = useState({
     api: 'healthy',
@@ -60,51 +63,77 @@ export default function ITPrediction({ setActiveTab, addRemediationAction }) {
   useEffect(() => {
     if (!isSimulating) return;
 
-    const sequence = [
-      {
-        delay: 1000,
-        action: () => {
-          setSimulationStep(1);
-          addLog('warning', '[user-service] WARN: Incoming request rate spiked by 400%');
-          setNodes(prev => ({ ...prev, api: 'warning' }));
-          setModels(prev => ({ ...prev, network: 45 }));
+    let sequence = [];
+    if (currentFault === 'traffic') {
+      sequence = [
+        {
+          delay: 1000,
+          action: () => {
+            setSimulationStep(1);
+            addLog('warning', '[user-service] WARN: Incoming request rate spiked by 400%');
+            setNodes(prev => ({ ...prev, api: 'warning' }));
+            setModels(prev => ({ ...prev, network: 45 }));
+          }
+        },
+        {
+          delay: 3000,
+          action: () => {
+            setSimulationStep(2);
+            addLog('warning', '[user-service] WARN: Thread pool utilization at 85%');
+            addLog('highlight', '[predictive-model] Anomaly Detected: user-service thread pool filling faster than GC cycle.', { xai: 'PyTorch LSTM Sequence Classifier: 400% deviation from historical baseline tensor detected in sliding window.' });
+            setNodes(prev => ({ ...prev, user: 'warning' }));
+            setModels(prev => ({ ...prev, thread: 68 }));
+          }
+        },
+        {
+          delay: 5500,
+          action: () => {
+            setSimulationStep(3);
+            addLog('error', '[db-cluster] ERROR: Connection timeout from user-service (max connections reached)');
+            setNodes(prev => ({ ...prev, db: 'warning' }));
+            setModels(prev => ({ ...prev, thread: 82 }));
+          }
+        },
+        {
+          delay: 8000,
+          action: () => {
+            setSimulationStep(4);
+            addLog('error', '[user-service] CRITICAL: Thread Exhaustion (OOM). Service unresponsive.');
+            addLog('error', '[payment-gateway] ERROR: Upstream user-service failed. Checkout abandoned.');
+            addLog('highlight', '[predictive-model] PREDICTION CONFIRMED: Thread exhaustion triggered cascading failure.', { 
+              escalate: {
+                title: 'Autoscale Pod Instances: user-service',
+                confidence: 94,
+                risk: 'CRITICAL',
+                type: 'danger',
+                reason: 'Thread exhaustion on user-service triggered cascading failure into payment gateway.',
+                nodeId: 'user',
+                metric: 'Thread pool utilization: 99%',
+                suggestedFix: 'Scale replicas from 2 to 5'
+              }
+            });
+            setNodes(prev => ({ ...prev, user: 'critical', payment: 'critical' }));
+            setModels(prev => ({ ...prev, thread: 99, network: 72 }));
+          }
         }
-      },
-      {
-        delay: 3000,
-        action: () => {
-          setSimulationStep(2);
-          addLog('warning', '[user-service] WARN: Thread pool utilization at 85%');
-          addLog('highlight', '[predictive-model] Anomaly Detected: user-service thread pool filling faster than GC cycle.', { xai: 'Flagged: 400% deviation from historical baseline tensor for this time of day.' });
-          setNodes(prev => ({ ...prev, user: 'warning' }));
-          setModels(prev => ({ ...prev, thread: 68 }));
-        }
-      },
-      {
-        delay: 5500,
-        action: () => {
-          setSimulationStep(3);
-          addLog('error', '[db-cluster] ERROR: Connection timeout from user-service (max connections reached)');
-          setNodes(prev => ({ ...prev, db: 'warning' }));
-          setModels(prev => ({ ...prev, thread: 82 }));
-        }
-      },
-      {
-        delay: 8000,
-        action: () => {
-          setSimulationStep(4);
-          addLog('error', '[user-service] CRITICAL: Thread Exhaustion (OOM). Service unresponsive.');
-          addLog('error', '[payment-gateway] ERROR: Upstream user-service failed. Checkout abandoned.');
-          addLog('highlight', '[predictive-model] PREDICTION CONFIRMED: Thread exhaustion triggered cascading failure.', { escalate: true });
-          setNodes(prev => ({ ...prev, user: 'critical', payment: 'critical' }));
-          setModels(prev => ({ ...prev, thread: 99, network: 72 }));
-        }
-      }
-    ];
+      ];
+    } else if (currentFault === 'deadlock') {
+      sequence = [
+        { delay: 1000, action: () => { setSimulationStep(1); addLog('warning', '[db-cluster] WARN: Long running transaction detected'); setNodes(prev => ({ ...prev, db: 'warning' })); setModels(prev => ({ ...prev, thread: 45 })); } },
+        { delay: 3500, action: () => { setSimulationStep(2); addLog('warning', '[user-service] WARN: DB Read locks blocking'); addLog('highlight', '[predictive-model] Anomaly Detected: Deadlock signature matched in query analyzer.', { xai: 'Graph Neural Network (GNN) Inference: Transaction dependency cycle detected. Node lock contention exceeded 3000ms threshold.' }); setNodes(prev => ({ ...prev, user: 'warning', db: 'warning' })); setModels(prev => ({ ...prev, thread: 75 })); } },
+        { delay: 6500, action: () => { setSimulationStep(3); addLog('error', '[db-cluster] CRITICAL: Deadlock condition reached. Rolling back transactions.'); addLog('error', '[api-gateway] ERROR: HTTP 500 Internal Server Error'); addLog('highlight', '[predictive-model] PREDICTION CONFIRMED: Database Deadlock.', { escalate: { title: 'Kill Blocking Query: db-cluster', confidence: 91, risk: 'CRITICAL', type: 'danger', reason: 'Database deadlock blocking critical read paths across services.', nodeId: 'db', metric: 'Connection wait time: 12.8s', suggestedFix: 'Terminate PID 4821 and unlock tables' } }); setNodes(prev => ({ ...prev, db: 'critical', api: 'critical' })); setModels(prev => ({ ...prev, thread: 95 })); } }
+      ];
+    } else if (currentFault === 'memory') {
+      sequence = [
+        { delay: 1000, action: () => { setSimulationStep(1); addLog('warning', '[user-service] WARN: Heap memory utilization > 80%'); setNodes(prev => ({ ...prev, user: 'warning' })); setModels(prev => ({ ...prev, memory: 55 })); } },
+        { delay: 3500, action: () => { setSimulationStep(2); addLog('warning', '[user-service] WARN: Major GC paused application for 1.2s'); addLog('highlight', '[predictive-model] Anomaly Detected: Tenured generation not clearing. Memory leak signature matched.', { xai: 'Autoencoder Reconstruction Anomaly: Reclaimed memory post-GC < 5%. Out-of-bounds error vector matches active leak profile.' }); setModels(prev => ({ ...prev, memory: 82 })); } },
+        { delay: 6500, action: () => { setSimulationStep(3); addLog('error', '[user-service] CRITICAL: OutOfMemoryError. JVM shutting down.'); addLog('error', '[api-gateway] ERROR: Upstream user-service unavailable.'); addLog('highlight', '[predictive-model] PREDICTION CONFIRMED: Memory Leak Cascade.', { escalate: { title: 'Restart Service & Rollback Deploy: user-service', confidence: 97, risk: 'CRITICAL', type: 'danger', reason: 'Memory leak detected leading to OOM crash. Likely tied to recent deployment.', nodeId: 'user', metric: 'Heap utilization: 98% (OOM)', suggestedFix: 'Rolling restart container group & rollback last tag' } }); setNodes(prev => ({ ...prev, user: 'critical', api: 'critical' })); setModels(prev => ({ ...prev, memory: 98 })); } }
+      ];
+    }
 
     const timeouts = sequence.map(step => setTimeout(step.action, step.delay));
     return () => timeouts.forEach(clearTimeout);
-  }, [isSimulating]);
+  }, [isSimulating, currentFault]);
 
   const addLog = (type, text, options = {}) => {
     const time = new Date().toLocaleTimeString([], { hour12: false });
@@ -113,15 +142,17 @@ export default function ITPrediction({ setActiveTab, addRemediationAction }) {
 
   const startSimulation = () => {
     setIsSimulating(true);
+    setCurrentFault(faultType);
     setSimulationStep(0);
     setNodes({ api: 'healthy', user: 'healthy', payment: 'healthy', db: 'healthy' });
     setModels({ thread: 2, memory: 1, network: 5 });
     addLog('info', '========================================');
-    addLog('highlight', '[system] INITIATING TRAFFIC SPIKE SIMULATION...');
+    addLog('highlight', `[system] INITIATING ${faultType.toUpperCase()} FAULT SIMULATION...`);
   };
 
   const resetSimulation = () => {
     setIsSimulating(false);
+    setCurrentFault(null);
     setSimulationStep(0);
     setNodes({ api: 'healthy', user: 'healthy', payment: 'healthy', db: 'healthy' });
     setModels({ thread: 2, memory: 1, network: 5 });
@@ -161,6 +192,16 @@ export default function ITPrediction({ setActiveTab, addRemediationAction }) {
     return { cpu, mem, status, cpuPct, baseCpuPct };
   };
 
+  const getNodeRisk = (nodeId) => {
+    switch (nodeId) {
+      case 'api': return 'RM 15,000';
+      case 'user': return 'RM 35,000';
+      case 'db': return 'RM 50,000';
+      case 'payment': return 'RM 42,500';
+      default: return 'RM 0';
+    }
+  };
+
   return (
     <div className="it-prediction-page">
       <div className="panel-header" style={{ marginBottom: 0 }}>
@@ -168,11 +209,23 @@ export default function ITPrediction({ setActiveTab, addRemediationAction }) {
           <h2 className="panel-title"><i className="fa-solid fa-network-wired" style={{ color: "var(--color-secondary)" }}></i> Infrastructure Topology & Predictive Map</h2>
           <p className="panel-subtitle">Click nodes to view real-time telemetry. AI models monitor for cascading failures.</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           {!isSimulating ? (
-            <button className="btn-simulate" onClick={startSimulation}>
-              <i className="fa-solid fa-bolt"></i> Simulate Traffic Spike
-            </button>
+            <>
+              <select 
+                className="form-select" 
+                style={{ padding: '0.5rem', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--border-light)' }}
+                value={faultType}
+                onChange={(e) => setFaultType(e.target.value)}
+              >
+                <option value="traffic">Traffic Spike (Thread Exhaustion)</option>
+                <option value="deadlock">Database Deadlock</option>
+                <option value="memory">Memory Leak</option>
+              </select>
+              <button className="btn-simulate" onClick={startSimulation}>
+                <i className="fa-solid fa-bolt"></i> Inject Fault
+              </button>
+            </>
           ) : (
             <button className="btn-simulate" style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)' }} onClick={resetSimulation}>
               <i className="fa-solid fa-rotate-left"></i> Reset Architecture
@@ -188,29 +241,42 @@ export default function ITPrediction({ setActiveTab, addRemediationAction }) {
           <div className={`topology-connection ${simulationStep >= 3 ? 'critical' : ''}`} style={{ width: '120px', right: '160px', top: '35%' }}></div>
           <div className={`topology-connection ${simulationStep >= 4 ? 'critical' : ''}`} style={{ width: '120px', right: '160px', top: '65%' }}></div>
 
-          <div className={`topology-node ${nodes.api}`} onClick={() => setSelectedNode('api')}>
+          <div className={`topology-node ${nodes.api}`} onClick={() => setSelectedNode('api')} style={{ position: 'relative' }}>
             <i className="fa-solid fa-globe"></i>
             <span className="node-label">API Gateway</span>
+            {nodes.api !== 'healthy' && (
+              <div className="revenue-risk-badge">
+                Est. Risk: {getNodeRisk('api')} / hr
+              </div>
+            )}
           </div>
 
-          <div className={`topology-node ${nodes.user}`} onClick={() => setSelectedNode('user')}>
+          <div className={`topology-node ${nodes.user}`} onClick={() => setSelectedNode('user')} style={{ position: 'relative' }}>
             <i className="fa-solid fa-users-gear"></i>
             <span className="node-label">User Service</span>
+            {nodes.user !== 'healthy' && (
+              <div className="revenue-risk-badge">
+                Est. Risk: {getNodeRisk('user')} / hr
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <div className={`topology-node ${nodes.db}`} onClick={() => setSelectedNode('db')}>
+            <div className={`topology-node ${nodes.db}`} onClick={() => setSelectedNode('db')} style={{ position: 'relative' }}>
               <i className="fa-solid fa-database"></i>
               <span className="node-label">DB Cluster</span>
+              {nodes.db !== 'healthy' && (
+                <div className="revenue-risk-badge">
+                  Est. Risk: {getNodeRisk('db')} / hr
+                </div>
+              )}
             </div>
             <div className={`topology-node ${nodes.payment}`} onClick={() => setSelectedNode('payment')} style={{ position: 'relative' }}>
               <i className="fa-solid fa-credit-card"></i>
               <span className="node-label">Payment Gateway</span>
-              
-              {/* Overlay Revenue at Risk */}
-              {(nodes.payment === 'warning' || nodes.payment === 'critical') && (
+              {nodes.payment !== 'healthy' && (
                 <div className="revenue-risk-badge">
-                  Est. Risk: RM 42,500 / hr
+                  Est. Risk: {getNodeRisk('payment')} / hr
                 </div>
               )}
             </div>
@@ -238,14 +304,27 @@ export default function ITPrediction({ setActiveTab, addRemediationAction }) {
               </div>
               
               {/* Historical Baseline Comparison Chart */}
-              <div className="baseline-chart" title="Real-time vs Historical Baseline for this time of day">
-                <div className="chart-col">
-                  <div className="chart-bar baseline" style={{ height: `${getNodeMetrics(selectedNode).baseCpuPct}%` }}></div>
-                  <span className="chart-label">Base</span>
+              <div style={{ marginTop: '1.25rem' }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '1.25rem', textAlign: 'center', fontWeight: '500' }}>
+                  CPU Load vs Historical Baseline
                 </div>
-                <div className="chart-col">
-                  <div className={`chart-bar current ${nodes[selectedNode]}`} style={{ height: `${getNodeMetrics(selectedNode).cpuPct}%` }}></div>
-                  <span className="chart-label">Live</span>
+                <div className="baseline-chart" title="Real-time vs Historical Baseline for this time of day">
+                  <div className="chart-col">
+                    <div className="chart-bar baseline" style={{ height: `${getNodeMetrics(selectedNode).baseCpuPct}%` }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 'bold', color: '#94a3b8', position: 'absolute', top: '-1.1rem', left: '50%', transform: 'translateX(-50%)' }}>
+                        {getNodeMetrics(selectedNode).baseCpuPct}%
+                      </span>
+                    </div>
+                    <span className="chart-label">Base</span>
+                  </div>
+                  <div className="chart-col">
+                    <div className={`chart-bar current ${nodes[selectedNode]}`} style={{ height: `${getNodeMetrics(selectedNode).cpuPct}%` }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 'bold', color: 'white', position: 'absolute', top: '-1.1rem', left: '50%', transform: 'translateX(-50%)' }}>
+                        {getNodeMetrics(selectedNode).cpuPct}%
+                      </span>
+                    </div>
+                    <span className="chart-label">Live</span>
+                  </div>
                 </div>
               </div>
 
@@ -306,13 +385,7 @@ export default function ITPrediction({ setActiveTab, addRemediationAction }) {
                 <button
                   className="btn-escalate"
                   onClick={() => {
-                    if (addRemediationAction) addRemediationAction({
-                      title: 'Autoscale Pod Instances: user-service',
-                      confidence: 94,
-                      risk: 'CRITICAL',
-                      type: 'danger',
-                      reason: 'Thread exhaustion on user-service triggered cascading failure into payment gateway. Escalated from IT Prediction.'
-                    });
+                    if (addRemediationAction) addRemediationAction(log.escalate);
                     if(setActiveTab) setActiveTab('remediation');
                     else window.dispatchEvent(new CustomEvent('navigate', { detail: 'remediation' }));
                   }}
