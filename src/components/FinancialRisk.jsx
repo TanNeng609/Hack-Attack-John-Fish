@@ -8,7 +8,7 @@ const generateNormalTx = (idOffset) => {
     id: `tx-${idOffset}`,
     time: new Date(idOffset).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     userId: `USR_${Math.floor(Math.random() * 9000) + 1000}`,
-    amount: `$${(Math.random() * 800 + 10).toFixed(2)}`,
+    amount: `RM ${(Math.random() * 800 + 10).toFixed(2)}`,
     location: MOCK_LOCATIONS[Math.floor(Math.random() * MOCK_LOCATIONS.length)],
     riskScore: Math.floor(Math.random() * 18) + 1, // 1 to 18
     model: MOCK_MODELS[Math.floor(Math.random() * MOCK_MODELS.length)],
@@ -21,7 +21,7 @@ const generateScamTx = (idOffset) => {
     id: `tx-${idOffset}`,
     time: new Date(idOffset).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     userId: `USR_9924`,
-    amount: `$${(Math.random() * 25000 + 15000).toFixed(2)}`, // Large anomalous amount
+    amount: `RM ${(Math.random() * 25000 + 15000).toFixed(2)}`, // Large anomalous amount
     location: 'Kuala Lumpur, MY', // Anomaly location
     riskScore: Math.floor(Math.random() * 10) + 88, // 88 to 97
     model: '[Ensemble Fraud Net]',
@@ -82,7 +82,7 @@ export default function FinancialRisk({ addRemediationAction }) {
     const { id, riskScore, userId, amount, location } = tx;
     setTransactions(prev => prev.map(t => {
       if (t.id === id) {
-        return { ...t, actionTaken: riskScore > 75 ? 'FROZEN' : 'FLAGGED' };
+        return { ...t, actionTaken: 'FROZEN' };
       }
       return t;
     }));
@@ -96,10 +96,15 @@ export default function FinancialRisk({ addRemediationAction }) {
         confidence: riskScore,
         risk: 'CRITICAL',
         type: 'danger',
-        reason: `${amount} transfer from ${location} frozen at ${riskScore}% fraud risk. Escalated from Financial Risk auditor.`
+        reason: `${amount} transfer from ${location} frozen at ${riskScore}% fraud risk. Escalated from Financial Risk auditor.`,
+        nodeId: 'payment',
+        metric: `Suspicious Volume: ${amount}`,
+        suggestedFix: 'Deactivate user session credentials and lock funds'
       });
     }
   };
+
+  const activeAlertsCount = 0; // matching logic
 
   return (
     <div className="overview-page">
@@ -149,7 +154,7 @@ export default function FinancialRisk({ addRemediationAction }) {
             <span>INSPECTED VOLUME</span>
             <i className="fa-solid fa-magnifying-glass-dollar stat-icon"></i>
           </div>
-          <div className="stat-value">${(inspectedVolume / 1000).toFixed(1)}k</div>
+          <div className="stat-value">RM {(inspectedVolume / 1000).toFixed(1)}k</div>
           <div className="stat-footer">
             <span className="trend-up"><i className="fa-solid fa-arrow-up"></i> Last 60 minutes window</span>
           </div>
