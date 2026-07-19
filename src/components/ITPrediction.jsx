@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function ITPrediction({ setActiveTab }) {
+export default function ITPrediction({ setActiveTab, addRemediationAction }) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationStep, setSimulationStep] = useState(0);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -303,9 +303,16 @@ export default function ITPrediction({ setActiveTab }) {
 
               {/* Escalate to Remediation Button */}
               {log.escalate && (
-                <button 
-                  className="btn-escalate" 
+                <button
+                  className="btn-escalate"
                   onClick={() => {
+                    if (addRemediationAction) addRemediationAction({
+                      title: 'Autoscale Pod Instances: user-service',
+                      confidence: 94,
+                      risk: 'CRITICAL',
+                      type: 'danger',
+                      reason: 'Thread exhaustion on user-service triggered cascading failure into payment gateway. Escalated from IT Prediction.'
+                    });
                     if(setActiveTab) setActiveTab('remediation');
                     else window.dispatchEvent(new CustomEvent('navigate', { detail: 'remediation' }));
                   }}

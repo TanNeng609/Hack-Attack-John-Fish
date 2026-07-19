@@ -29,6 +29,38 @@ export default function App() {
     }
   ]);
 
+  // Remediation action queue lives here (like alerts) so every page can
+  // escalate real incidents into the Remediation Center instead of the
+  // center showing a static, disconnected list.
+  const [remediationActions, setRemediationActions] = useState([
+    {
+      id: 2,
+      title: "Isolate Network Gateway: Payment API Split",
+      confidence: 89,
+      risk: "HIGH",
+      type: "warning",
+      reason: "Unusual traffic burst detected on payment gateway endpoint.",
+      status: "Pending Approval"
+    },
+    {
+      id: 3,
+      title: "Flush Redis Cache & Restart Cluster",
+      confidence: 99,
+      risk: "MEDIUM",
+      type: "primary",
+      reason: "Memory fragmentation in Redis cluster exceeding 85% capacity.",
+      status: "Pending Approval"
+    }
+  ]);
+
+  const addRemediationAction = (action) => {
+    setRemediationActions(prev => {
+      // Don't stack duplicate pending actions for the same incident
+      if (prev.some(a => a.title === action.title && a.status === 'Pending Approval')) return prev;
+      return [{ id: Date.now(), status: 'Pending Approval', ...action }, ...prev];
+    });
+  };
+
   // Handle application theme toggling
   useEffect(() => {
     if (theme === 'light') {
@@ -160,10 +192,10 @@ export default function App() {
           {activeTab === 'overview' && (
             <Overview alerts={alerts} setAlerts={setAlerts} />
           )}
-          {activeTab === 'it-prediction' && <ITPrediction setActiveTab={setActiveTab} />}
-          {activeTab === 'financial-risk' && <FinancialRisk />}
-          {activeTab === 'remediation' && <Remediation />}
-          {activeTab === 'hardware-degradation' && <HardwareDegradation setActiveTab={setActiveTab} setAlerts={setAlerts} />}
+          {activeTab === 'it-prediction' && <ITPrediction setActiveTab={setActiveTab} addRemediationAction={addRemediationAction} />}
+          {activeTab === 'financial-risk' && <FinancialRisk addRemediationAction={addRemediationAction} />}
+          {activeTab === 'remediation' && <Remediation actions={remediationActions} setActions={setRemediationActions} />}
+          {activeTab === 'hardware-degradation' && <HardwareDegradation setActiveTab={setActiveTab} setAlerts={setAlerts} addRemediationAction={addRemediationAction} />}
           {activeTab === 'settings' && <Settings theme={theme} setTheme={setTheme} />}
         </div>
       </main>

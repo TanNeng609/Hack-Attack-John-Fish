@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function Remediation() {
+export default function Remediation({ actions, setActions }) {
   const [terminalStatus, setTerminalStatus] = useState('IDLE');
   const [logs, setLogs] = useState([
     '[system] AegisAI Remediation Daemon active.',
@@ -9,45 +9,6 @@ export default function Remediation() {
   const [lastActionTime, setLastActionTime] = useState('--:--:--');
 
   const terminalEndRef = useRef(null);
-
-  const [actions, setActions] = useState([
-    {
-      id: 1,
-      title: "Autoscale Pod Instances: user-service",
-      confidence: 94,
-      risk: "CRITICAL",
-      type: "danger",
-      reason: "Thread exhaustion on user-service is blocking DB read locks.",
-      status: "Pending Approval"
-    },
-    {
-      id: 2,
-      title: "Isolate Network Gateway: Payment API Split",
-      confidence: 89,
-      risk: "HIGH",
-      type: "warning",
-      reason: "Unusual traffic burst detected on payment gateway endpoint.",
-      status: "Pending Approval"
-    },
-    {
-      id: 3,
-      title: "Flush Redis Cache & Restart Cluster",
-      confidence: 99,
-      risk: "MEDIUM",
-      type: "primary",
-      reason: "Memory fragmentation in Redis cluster exceeding 85% capacity.",
-      status: "Pending Approval"
-    },
-    {
-      id: 4,
-      title: "Quarantine Fraudulent Account User ID: 9021",
-      confidence: 97,
-      risk: "CRITICAL",
-      type: "danger",
-      reason: "Account exhibit patterns consistent with automated carding attacks.",
-      status: "Pending Approval"
-    }
-  ]);
 
   // Auto-scroll terminal
   useEffect(() => {
@@ -81,7 +42,11 @@ export default function Remediation() {
     setLogs(prev => [...prev, '', `----------------------------------------`]);
 
     const interval = setInterval(() => {
-      setLogs(prev => [...prev, scriptSteps[stepIndex]]);
+      // Capture the step value now -- the setLogs updater runs later, after
+      // stepIndex has already been incremented, which pushed undefined into
+      // the log list on the final tick and crashed the page render.
+      const step = scriptSteps[stepIndex];
+      setLogs(prev => [...prev, step]);
       stepIndex++;
       
       if (stepIndex >= scriptSteps.length) {

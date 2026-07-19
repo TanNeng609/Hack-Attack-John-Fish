@@ -29,7 +29,7 @@ const generateScamTx = (idOffset) => {
   };
 };
 
-export default function FinancialRisk() {
+export default function FinancialRisk({ addRemediationAction }) {
   const [riskStatus, setRiskStatus] = useState('SECURE');
   const [txVelocity, setTxVelocity] = useState(1420);
   const [flaggedCount, setFlaggedCount] = useState(3);
@@ -78,17 +78,26 @@ export default function FinancialRisk() {
     ].slice(0, 10));
   };
 
-  const handleTxAction = (id, riskScore) => {
-    setTransactions(prev => prev.map(tx => {
-      if (tx.id === id) {
-        return { ...tx, actionTaken: riskScore > 75 ? 'FROZEN' : 'FLAGGED' };
+  const handleTxAction = (tx) => {
+    const { id, riskScore, userId, amount, location } = tx;
+    setTransactions(prev => prev.map(t => {
+      if (t.id === id) {
+        return { ...t, actionTaken: riskScore > 75 ? 'FROZEN' : 'FLAGGED' };
       }
-      return tx;
+      return t;
     }));
-    
-    // Resolve critical alert if high-risk tx is frozen
+
+    // Resolve critical alert if high-risk tx is frozen, and escalate a
+    // follow-up quarantine script to the shared Remediation Center queue
     if (riskScore > 75) {
       setRiskStatus('SECURE');
+      if (addRemediationAction) addRemediationAction({
+        title: `Quarantine Fraudulent Account User ID: ${userId.replace('USR_', '')}`,
+        confidence: riskScore,
+        risk: 'CRITICAL',
+        type: 'danger',
+        reason: `${amount} transfer from ${location} frozen at ${riskScore}% fraud risk. Escalated from Financial Risk auditor.`
+      });
     }
   };
 
@@ -209,7 +218,7 @@ export default function FinancialRisk() {
                     <td style={{ padding: '0.75rem 1rem' }}>
                       {!tx.actionTaken ? (
                         <button 
-                          onClick={() => handleTxAction(tx.id, tx.riskScore)}
+                          onClick={() => handleTxAction(tx)}
                           style={{
                             background: tx.riskScore > 75 ? 'var(--color-danger)' : 'transparent',
                             color: tx.riskScore > 75 ? '#fff' : 'var(--text-primary)',

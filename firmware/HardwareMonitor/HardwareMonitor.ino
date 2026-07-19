@@ -90,7 +90,7 @@ void loop() {
 
   digitalWrite(PIN_LED_GREEN, (!localCritical && !localWarning) ? HIGH : LOW);
   digitalWrite(PIN_LED_RED, (localCritical || localWarning) ? HIGH : LOW);
-  digitalWrite(PIN_BUZZER, (waterDetected || (doorOpen && !lastDoorOpen)) ? HIGH : LOW);
+  digitalWrite(PIN_BUZZER, (waterDetected || doorOpen) ? HIGH : LOW);
 
   if (doorOpen != lastDoorOpen) {
     pushEvent("tamper", doorOpen ? "Rack door opened - tilt switch triggered." : "Rack door closed.");

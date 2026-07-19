@@ -16,7 +16,7 @@ function classify(componentTemp, doorOpen, waterDetected) {
   return 'Normal';
 }
 
-export default function HardwareDegradation({ setActiveTab, setAlerts }) {
+export default function HardwareDegradation({ setActiveTab, setAlerts, addRemediationAction }) {
   const [mode, setMode] = useState('connecting'); // 'connecting' | 'live' | 'simulated'
   const [telemetry, setTelemetry] = useState({
     ambientTemp: 24.5,
@@ -339,7 +339,19 @@ export default function HardwareDegradation({ setActiveTab, setAlerts }) {
             <div key={ev.id} className={`log-line ${ev.type === 'thermal' || ev.type === 'water' ? 'error' : ev.type === 'tamper' ? 'warning' : 'info'}`}>
               {ev.ts} [{ev.type}] {ev.message}
               {ev.type === 'thermal' && (
-                <button className="btn-escalate" onClick={() => { if (setActiveTab) setActiveTab('remediation'); }}>
+                <button
+                  className="btn-escalate"
+                  onClick={() => {
+                    if (addRemediationAction) addRemediationAction({
+                      title: 'Throttle Rack Workload & Dispatch Technician: rack-01',
+                      confidence: 91,
+                      risk: 'CRITICAL',
+                      type: 'danger',
+                      reason: `${ev.message} Escalated from Hardware Degradation monitor.`
+                    });
+                    if (setActiveTab) setActiveTab('remediation');
+                  }}
+                >
                   <i className="fa-solid fa-shield-halved"></i> Escalate to Remediation Center
                 </button>
               )}

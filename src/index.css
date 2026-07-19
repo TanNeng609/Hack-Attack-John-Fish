@@ -439,6 +439,24 @@ body.light-theme .card-stat.danger:hover { border-color: rgba(220, 38, 38, 0.4);
     margin-bottom: 2rem;
 }
 
+/* Page wrappers stretch to fill the viewport height, and their grid-2col
+   grows to fill whatever space is left, so the main chart/content area
+   expands on large windows instead of leaving dead space below it.
+   Scoped to these two page wrappers only -- .it-prediction-page's grid-2col
+   holds a compact topology diagram (min-height: 250px) that should NOT
+   stretch to fill leftover vertical space. */
+.overview-page,
+.hardware-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.overview-page > .grid-2col,
+.hardware-page > .grid-2col {
+    flex: 1 1 auto;
+}
+
 .card-panel {
     background: var(--bg-surface);
     border: 1px solid var(--border-light);
